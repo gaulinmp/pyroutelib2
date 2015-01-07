@@ -26,6 +26,7 @@ try:  # Python 3.x
 except ImportError:  # Python 2.x
   from urllib import urlretrieve
 
+from tilenames import tileEdges
 
 def DownloadLevel():
   """All primary downloads are done at a particular zoom level"""
@@ -34,30 +35,22 @@ def DownloadLevel():
 def GetOsmTileData(z,x,y):
   """Download OSM data for the region covering a slippy-map tile"""
   if(x < 0 or y < 0 or z < 0 or z > 25):
-    print("Disallowed %d,%d at %d" % (x,y,z))
+    print("Disallowed %d,%d at %d" % (x, y, z))
     return
+  s,w,n,e = tileEdges(x,y,z)
   
   directory = 'cache/%d/%d/%d' % (z,x,y)
   filename = '%s/data.osm' % (directory)
   if(not os.path.exists(directory)):
     os.makedirs(directory)
-  
-  if(z == DownloadLevel()):
-    # Download the data
-    URL = 'http://api.openstreetmap.org/api/?/map/%d/%d/%d' % (z,x,y)
-     
-    if(not os.path.exists(filename)): # TODO: allow expiry of old data
-      urlretrieve(URL, filename)
-    return(filename)
-    
-  elif(z > DownloadLevel()):
-    # use larger tile
-    while(z > DownloadLevel()):
-      z = z - 1
-      x = int(x / 2)
-      y = int(y / 2)
-    return(GetOsmTileData(z,x,y))
-  return("")
+
+  # /api/0.6/map?bbox=left,bottom,right,top
+  URL = 'http://api.openstreetmap.org/api/0.6/map?bbox={:0.4f},{:0.4f},{:0.4f},{:0.4f}'.format(w,s,e,n)
+  print(URL)
+   
+  if(not os.path.exists(filename)): # TODO: allow expiry of old data
+    urlretrieve(URL, filename)
+  return(filename)
 
 if(__name__ == "__main__"):
   """test mode"""
