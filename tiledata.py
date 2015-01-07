@@ -20,8 +20,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------------
-from urllib import *
 import os
+try:  # Python 3.x
+  from urllib.request import urlretrieve
+except ImportError:  # Python 2.x
+  from urllib import urlretrieve
+
 
 def DownloadLevel():
   """All primary downloads are done at a particular zoom level"""
@@ -30,7 +34,7 @@ def DownloadLevel():
 def GetOsmTileData(z,x,y):
   """Download OSM data for the region covering a slippy-map tile"""
   if(x < 0 or y < 0 or z < 0 or z > 25):
-    print "Disallowed %d,%d at %d" % (x,y,z)
+    print("Disallowed %d,%d at %d" % (x,y,z))
     return
   
   directory = 'cache/%d/%d/%d' % (z,x,y)
@@ -40,7 +44,7 @@ def GetOsmTileData(z,x,y):
   
   if(z == DownloadLevel()):
     # Download the data
-    URL = 'http://dev.openstreetmap.org/~ojw/api/?/map/%d/%d/%d' % (z,x,y)
+    URL = 'http://api.openstreetmap.org/api/?/map/%d/%d/%d' % (z,x,y)
      
     if(not os.path.exists(filename)): # TODO: allow expiry of old data
       urlretrieve(URL, filename)
@@ -57,4 +61,4 @@ def GetOsmTileData(z,x,y):
 
 if(__name__ == "__main__"):
   """test mode"""
-  print GetOsmTileData(15, 16218, 10741)
+  print(GetOsmTileData(15, 16218, 10741))

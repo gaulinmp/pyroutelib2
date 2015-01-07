@@ -22,12 +22,13 @@
 #  2007-11-04  OJW  Modified from pyroute.py
 #  2007-11-05  OJW  Multiple forms of transport
 #------------------------------------------------------
-import sys
 import os
-import tiledata
-import tilenames
 import re
-import weights
+import sys
+
+from pyroutelib2 import tiledata
+from pyroutelib2 import tilenames
+from pyroutelib2 import weights
 
 class LoadOsm:
   """Parse an OSM file looking for routing information, and do routing with it"""
@@ -57,7 +58,7 @@ class LoadOsm:
 
   def loadOsm(self, filename):
     if(not os.path.exists(filename)):
-      print "No such data file %s" % filename
+      print("No such data file %s" % filename)
       return(False)
     fp = open(filename, "r")
     re_way = re.compile("<way id='(\d+)'>\s*$")
@@ -115,7 +116,7 @@ class LoadOsm:
     last = [None,None,None]
 
     if(wayID == 41 and 0):
-      print nodes
+      print(nodes)
       sys.exit()
     for node in nodes:
       (node_id,x,y) = node
@@ -135,7 +136,7 @@ class LoadOsm:
   def addLink(self,fr,to, weight=1):
     """Add a routeable edge to the scenario"""
     try:
-      if to in self.routing[fr].keys():
+      if to in list(self.routing[fr].keys()):
         return
       self.routing[fr][to] = weight
     except KeyError:
@@ -174,7 +175,7 @@ class LoadOsm:
     maxDist = 1E+20
     nodeFound = None
     posFound = None
-    for (node_id,pos) in self.rnodes.items():
+    for (node_id,pos) in list(self.rnodes.items()):
       dy = pos[0] - lat
       dx = pos[1] - lon
       dist = dx * dx + dy * dy
@@ -187,15 +188,15 @@ class LoadOsm:
       
   def report(self):
     """Display some info about the loaded data"""
-    print "Loaded %d nodes" % len(self.rnodes.keys())
-    print "Loaded %d %s routes" % (len(self.routing.keys()), self.transport)
+    print("Loaded %d nodes" % len(list(self.rnodes.keys())))
+    print("Loaded %d %s routes" % (len(list(self.routing.keys())), self.transport))
 
 # Parse the supplied OSM file
 if __name__ == "__main__":
   data = LoadOsm("cycle")
   if(not data.getArea(52.55291,-1.81824)):
-    print "Failed to get data"
+    print("Failed to get data")
   data.getArea(52.55291,-1.81824)
   data.report()
 
-  print "Searching for node: found " + str(data.findNode(52.55291,-1.81824))
+  print("Searching for node: found " + str(data.findNode(52.55291,-1.81824)))
