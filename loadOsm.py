@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/etc/env python
 #----------------------------------------------------------------
 # load OSM data file into memory
 #
@@ -26,9 +26,12 @@ import os
 import re
 import sys
 
-from pyroutelib2 import tiledata
-from pyroutelib2 import tilenames
-from pyroutelib2 import weights
+# from pyroutelib2 import tiledata
+# from pyroutelib2 import tilenames
+# from pyroutelib2 import weights
+import tiledata
+import tilenames
+import weights
 
 class LoadOsm:
   """Parse an OSM file looking for routing information, and do routing with it"""
@@ -183,7 +186,7 @@ class LoadOsm:
         maxDist = dist
         nodeFound = node_id
         posFound = pos
-    #print "found at %s"%str(posFound)
+    # print("found at %s"%str(posFound))
     return(nodeFound)
       
   def report(self):
@@ -194,9 +197,9 @@ class LoadOsm:
 # Parse the supplied OSM file
 if __name__ == "__main__":
   data = LoadOsm("cycle")
-  if(not data.getArea(52.55291,-1.81824)):
+  if(not data.getArea(29.738632, -95.404546)):
     print("Failed to get data")
-  data.getArea(52.55291,-1.81824)
+  data.getArea(29.738632, -95.404546)
   data.report()
 
   print("Searching for node: found " + str(data.findNode(52.55291,-1.81824)))
