@@ -25,10 +25,9 @@
 import os
 import re
 import sys
+import osmapi
 
-# from pyroutelib2 import tiledata
-# from pyroutelib2 import tilenames
-# from pyroutelib2 import weights
+# from pyroutelib2 import (tiledata, tilenames, weights)
 import tiledata
 import tilenames
 import weights
@@ -42,9 +41,11 @@ class LoadOsm:
     self.transport = transport
     self.tiles = {}
     self.weights = weights.RoutingWeights()
+    self.api = osmapi.OsmApi(api="api.openstreetmap.org")
   
   def getArea(self, lat, lon):
-    """Download data in the vicinity of a lat/long"""
+    """Download data in the vicinity of a lat/long.
+    Return filename to existing or newly downloaded .osm file."""
     
     z = tiledata.DownloadLevel()
     (x,y) = tilenames.tileXY(lat, lon, z)
@@ -63,41 +64,38 @@ class LoadOsm:
     if(not os.path.exists(filename)):
       print("No such data file %s" % filename)
       return(False)
-    fp = open(filename, "r")
-    re_way = re.compile("<way id='(\d+)'>\s*$")
-    re_nd = re.compile("\s+<nd id='(\d+)' x='(\d+)' y='(\d+)' />\s*$")
-    re_tag = re.compile("\s+<tag k='(.*)' v='(.*)' />\s*$")
-    re_endway = re.compile("</way>$")
-    in_way = 0
 
-    way_tags = {}
-    way_nodes = []
+    nodes, ways = {}, {}
 
-    for line in fp:
-      result_way = re_way.match(line)
-      result_endway = re_endway.match(line)
-      if(result_way):
-        in_way = True
-        way_tags = {}
-        way_nodes = []
-        way_id = int(result_way.group(1))
-      elif(result_endway):
-        in_way = False
-        self.storeWay(way_id, way_tags, way_nodes)
-      elif(in_way):
-        result_nd = re_nd.match(line)
-        if(result_nd):
-          node_id = int(result_nd.group(1))
-          x = float(result_nd.group(2))
-          y = float(result_nd.group(3))
+    with open(filename, "r") as fp:
+      osm_xml = fp.read()
+    if len(osm_xml.strip()) < 1:
+      print("No data read from {}".format(filename))
+      return(False)
 
-          (lat,lon) = tilenames.xy2latlon(x,y,31)
-          
-          way_nodes.append([node_id,lat,lon])
+    data = self.api.ParseOsm(osm_xml)
+    # data = [{ type: node|way|relation, data: {}},...]
+
+    for x in data:
+      try:
+        if x['type'] == 'node':
+          nodes[x['data']['id']] = x['data']
+        elif x['type'] == 'way':
+          ways[x['data']['id']] = x['data']
         else:
-          result_tag = re_tag.match(line)
-          if(result_tag):
-            way_tags[result_tag.group(1)] = result_tag.group(2)
+          continue
+      except KeyError:
+        # Don't care about bad data (no type/data key)
+        continue
+    #end for x in data
+    for way_id, way_data in ways.items():
+      way_nodes = []
+      for nd in way_data['nd']:
+        if nd not in nodes:
+          continue
+        way_nodes.append([nodes[nd]['id'], nodes[nd]['lat'], nodes[nd]['lon']])
+      self.storeWay(way_id, way_data['tag'], way_nodes)
+      
     return(True)
   
   def storeWay(self, wayID, tags, nodes):
