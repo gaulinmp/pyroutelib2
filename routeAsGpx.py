@@ -22,7 +22,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #------------------------------------------------------
-from route import *
+from route import Router
+from loadOsm import LoadOsm
   
 def routeToGpx(lat1,lon1,lat2,lon2, transport, description="", style="track"):
   """Format a route (as list of nodes) into a GPX file"""
@@ -72,8 +73,7 @@ def routeToGpx(lat1,lon1,lat2,lon2, transport, description="", style="track"):
   
   return(output)
 
-if __name__ == "__main__":
-  
+if __name__ == "__main__":  
   try:
     print routeToGpx(
       float(sys.argv[1]),

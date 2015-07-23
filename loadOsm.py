@@ -26,13 +26,15 @@ import os
 import re
 import sys
 import osmapi
+import xml.etree.ElementTree as etree
+from datetime import datetime
 
 # from pyroutelib2 import (tiledata, tilenames, weights)
 import tiledata
 import tilenames
 import weights
 
-class LoadOsm:
+class LoadOsm(object):
   """Parse an OSM file looking for routing information, and do routing with it"""
   def __init__(self, transport):
     """Initialise an OSM-file parser"""
@@ -60,6 +62,97 @@ class LoadOsm:
     #print "Loading %d,%d at z%d from %s" % (x,y,z,filename)
     return(self.loadOsm(filename))
 
+  def _ParseDate(self, DateString):
+    result = DateString
+    try:
+      result = datetime.strptime(DateString, "%Y-%m-%d %H:%M:%S UTC")
+    except:
+      try:
+        result = datetime.strptime(DateString, "%Y-%m-%dT%H:%M:%SZ")
+      except:
+        pass
+      return result
+
+  def getElementAttributes(self, element):  # noqa
+      result = {}
+      for k, v in element.attrib.items():
+        if k == "uid":
+            v = int(v)
+        elif k == "changeset":
+            v = int(v)
+        elif k == "version":
+            v = int(v)
+        elif k == "id":
+            v = int(v)
+        elif k == "lat":
+            v = float(v)
+        elif k == "lon":
+            v = float(v)
+        elif k == "open":
+            v = (v == "true")
+        elif k == "visible":
+            v = (v == "true")
+        elif k == "ref":
+            v = int(v)
+        elif k == "comments_count":
+            v = int(v)
+        elif k == "timestamp":
+            v = self._ParseDate(v)
+        elif k == "created_at":
+            v = self._ParseDate(v)
+        elif k == "closed_at":
+            v = self._ParseDate(v)
+        elif k == "date":
+            v = self._ParseDate(v)
+        result[k] = v
+      return result
+
+  def getElementTags(self, element):
+    result = {}
+    for child in element:
+      if child.tag =="tag":
+        k = child.attrib["k"]
+        v = child.attrib["v"]
+        result[k] = v
+    return result
+
+  def parseOsmFile(self, filename):
+    result = []
+    with open(filename, "r") as f:
+      for event, elem in etree.iterparse(f): # events=['end']
+        if elem.tag == "node":
+          data = self.getElementAttributes(elem)
+          data["tag"] = self.getElementTags(elem)
+          result.append({
+            "type": "node",
+            "data": data
+          })
+        elif elem.tag == "way":
+          data = self.getElementAttributes(elem)
+          data["tag"] = self.getElementTags(elem)
+          data["nd"] = []
+          for child in elem:
+            if child.tag == "nd":
+              data["nd"].append(int(child.attrib["ref"]))
+          result.append({
+            "type": "way",
+            "data": data
+          })
+        elif elem.tag == "relation":
+          data = self.getElementAttributes(elem)
+          data["tag"] = self.getElementTags(elem)
+          data["member"] = []
+          for child in elem:
+            if child.tag == " member":
+              data["member"].append(self.getElementAttributes(child))
+          result.append({
+            "type": "relation",
+            "data": data
+          })
+          elem.clear()
+    return result
+    
+
   def loadOsm(self, filename):
     if(not os.path.exists(filename)):
       print("No such data file %s" % filename)
@@ -67,13 +160,7 @@ class LoadOsm:
 
     nodes, ways = {}, {}
 
-    with open(filename, "r") as fp:
-      osm_xml = fp.read()
-    if len(osm_xml.strip()) < 1:
-      print("No data read from {}".format(filename))
-      return(False)
-
-    data = self.api.ParseOsm(osm_xml)
+    data = self.parseOsmFile(filename)
     # data = [{ type: node|way|relation, data: {}},...]
 
     for x in data:
