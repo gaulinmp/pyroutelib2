@@ -27,12 +27,9 @@
 #------------------------------------------------------
 import sys
 import math 
-try:
-  from .loadOsm import *
-except (ImportError, SystemError):
-  from loadOsm import *
+from loadOsm import LoadOsm
 
-class Router:
+class Router(object):
   def __init__(self, data):
     self.data = data
   def distance(self,n1,n2):
