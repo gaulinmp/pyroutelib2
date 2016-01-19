@@ -210,7 +210,7 @@ class LoadOsm(object):
       (node_id,x,y) = node
       if last[0]:
         if(access[self.transport]):
-          weight = self.weights.get(self.transport, highway)
+          weight = self.weights.get(self.transport, railway or highway)
           self.addLink(last[0], node_id, weight)
           self.makeNodeRouteable(last)
           if reversible or self.transport == 'foot':
