@@ -75,6 +75,7 @@ def routeToGpx(lat1,lon1,lat2,lon2, transport, description="", style="track"):
 
 if __name__ == "__main__":  
   try:
+    import sys
     print routeToGpx(
       float(sys.argv[1]),
       float(sys.argv[2]),
